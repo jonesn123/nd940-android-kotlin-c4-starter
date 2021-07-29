@@ -3,7 +3,6 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 apply plugin: "androidx.navigation.safeargs.kotlin"
 apply plugin: 'kotlin-android-extensions'
-apply plugin: 'com.google.gms.google-services'
 
 android {
     compileSdkVersion rootProject.compileSdkVersion
@@ -16,6 +15,7 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -39,10 +39,10 @@ android {
         dataBinding true
     }
 }
-
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     // App dependencies
+    implementation 'androidx.multidex:multidex:2.0.1'
     implementation "androidx.appcompat:appcompat:$appCompatVersion"
     implementation "androidx.legacy:legacy-support-v4:$androidXLegacySupport"
     implementation "androidx.annotation:annotation:$androidXAnnotations"
@@ -53,7 +53,8 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout:$constraintVersion"
 
     implementation 'com.google.code.gson:gson:2.8.5'
-
+    implementation 'com.google.firebase:firebase-bom:28.3.0'
+    implementation 'com.firebaseui:firebase-ui-auth:5.0.0'
     // Architecture Components
     //Navigation dependencies
     implementation 'androidx.appcompat:appcompat:1.2.0'
@@ -124,3 +125,5 @@ dependencies {
 
 
 }
+
+apply plugin: 'com.google.gms.google-services'
