@@ -8,12 +8,14 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
+import com.firebase.ui.auth.AuthMethodPickerLayout
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.firebase.auth.FirebaseAuth
 import com.udacity.project4.R
 import com.udacity.project4.locationreminders.RemindersActivity
 import kotlinx.android.synthetic.main.activity_authentication.*
+
 
 /**
  * This class should be the starting point of the app, It asks the users to sign in / register, and redirects the
@@ -30,11 +32,9 @@ class AuthenticationActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_authentication)
-//         TODO: Implement the create account and sign in using FirebaseUI, use sign in using email and sign in using Google
         login_button.setOnClickListener {
             launchSignInFlow()
         }
-//          TODO: If the user was authenticated, send him to RemindersActivity
         viewModel.authenticationState.observe(this, Observer { state ->
             when(state) {
                 LoginViewModel.AuthenticationState.AUTHENTICATED -> {
@@ -45,10 +45,6 @@ class AuthenticationActivity : AppCompatActivity() {
                 }
             }
         })
-
-//          TODO: a bonus is to customize the sign in flow to look nice using :
-        //https://github.com/firebase/FirebaseUI-Android/blob/master/auth/README.md#custom-layout
-
     }
 
     private fun launchSignInFlow() {
@@ -58,12 +54,18 @@ class AuthenticationActivity : AppCompatActivity() {
             AuthUI.IdpConfig.EmailBuilder().build(), AuthUI.IdpConfig.GoogleBuilder().build()
         )
 
+        // TODO: a bonus is to customize the sign in flow to look nice using :
+        //https://github.com/firebase/FirebaseUI-Android/blob/master/auth/README.md#custom-layout
+        val customLayout = AuthMethodPickerLayout.Builder(R.layout.signup_layout)
+            .setGoogleButtonId(R.id.sign_in_google)
+            .setEmailButtonId(R.id.sign_in_email)
+            .build()
         // Create and launch sign-in intent. We listen to the response of this activity with the
         // SIGN_IN_RESULT_CODE code.
         startActivityForResult(
             AuthUI.getInstance().createSignInIntentBuilder().setAvailableProviders(
                 providers
-            ).build(), SIGN_IN_RESULT_CODE
+            ).setTheme(R.style.GreenTheme).setAuthMethodPickerLayout(customLayout).build(), SIGN_IN_RESULT_CODE
         )
     }
 

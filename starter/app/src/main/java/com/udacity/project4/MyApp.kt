@@ -2,6 +2,7 @@ package com.udacity.project4
 
 import android.app.Application
 import androidx.multidex.MultiDexApplication
+import com.google.android.libraries.places.api.Places
 import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.data.local.LocalDB
 import com.udacity.project4.locationreminders.data.local.RemindersLocalRepository

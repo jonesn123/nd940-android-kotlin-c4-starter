@@ -22,12 +22,42 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="Reminder Details"
+            android:text="@string/geofence_entered"
             android:textSize="@dimen/text_size_large"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@{reminderDataItem.title}"
+            tools:text="Title"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@{reminderDataItem.description}"
+            tools:text="Description"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@{reminderDataItem.location}"
+            tools:text="Location"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@{reminderDataItem.latitude.toString()}"
+            tools:text="Latitude" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@{reminderDataItem.longitude.toString()}"
+            tools:text="longitude" />
 
     </LinearLayout>
 </layout>

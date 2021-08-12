@@ -26,5 +26,34 @@ import org.junit.Test
 class RemindersDaoTest {
 
 //    TODO: Add testing implementation to the RemindersDao.kt
+    @get:Rule
+    var instantExecutorRule = InstantTaskExecutorRule()
 
+    private lateinit var database: RemindersDatabase
+    @Before
+    fun initDb() {
+        database = Room.inMemoryDatabaseBuilder(
+            ApplicationProvider.getApplicationContext(),
+            RemindersDatabase::class.java
+        ).build()
+    }
+
+    @After
+    fun closeDb() = database.close()
+
+    @Test
+    fun saveReminder() = runBlockingTest {
+        val reminder = ReminderDTO("golden_gate_bridge title", "golden_gate_bridge desc", "golden_gate_bridge", 37.819927,-122.478256,"1")
+        database.reminderDao().saveReminder(reminder)
+
+        val loaded = database.reminderDao().getReminderById("1")
+
+        assertThat<ReminderDTO>(loaded as ReminderDTO, notNullValue())
+        assertThat(loaded.id, `is`("1"))
+        assertThat(loaded.title, `is`("golden_gate_bridge title"))
+        assertThat(loaded.description, `is`("golden_gate_bridge desc"))
+        assertThat(loaded.location, `is`("golden_gate_bridge"))
+        assertThat(loaded.latitude, `is`(37.819927))
+        assertThat(loaded.longitude, `is`(-122.478256))
+    }
 }

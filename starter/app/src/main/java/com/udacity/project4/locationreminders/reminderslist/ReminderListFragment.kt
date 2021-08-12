@@ -83,7 +83,6 @@ class ReminderListFragment : BaseFragment() {
     private fun setupRecyclerView() {
         val adapter = RemindersListAdapter {
         }
-
 //        setup the recycler view using the extension function
         binding.reminderssRecyclerView.setup(adapter)
     }
@@ -91,8 +90,8 @@ class ReminderListFragment : BaseFragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.logout -> {
-//                TODO: add the logout implementation
                 AuthUI.getInstance().signOut(requireContext())
+                _viewModel.deleteAllReminders()
             }
         }
         return super.onOptionsItemSelected(item)

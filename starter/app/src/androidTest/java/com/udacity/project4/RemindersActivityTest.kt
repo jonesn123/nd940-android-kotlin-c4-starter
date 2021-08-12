@@ -1,16 +1,29 @@
 package com.udacity.project4
 
 import android.app.Application
+import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
+import androidx.test.espresso.Espresso
+import androidx.test.espresso.IdlingRegistry
+import androidx.test.espresso.assertion.ViewAssertions
+import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import com.udacity.project4.locationreminders.RemindersActivity
 import com.udacity.project4.locationreminders.data.ReminderDataSource
+import com.udacity.project4.locationreminders.data.dto.ReminderDTO
 import com.udacity.project4.locationreminders.data.local.LocalDB
 import com.udacity.project4.locationreminders.data.local.RemindersLocalRepository
 import com.udacity.project4.locationreminders.reminderslist.RemindersListViewModel
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
+import com.udacity.project4.util.DataBindingIdlingResource
+import com.udacity.project4.util.EspressoIdlingResource
+import com.udacity.project4.util.monitorActivity
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Before
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.core.context.startKoin
@@ -66,6 +79,56 @@ class RemindersActivityTest :
     }
 
 
-//    TODO: add End to End testing to the app
+    //    TODO: add End to End testing to the app
+    private val dataBindingIdlingResource = DataBindingIdlingResource()
+
+    /**
+     * Idling resources tell Espresso that the app is idle or busy. This is needed when operations
+     * are not scheduled in the main Looper (for example when executed on a different thread).
+     */
+    @Before
+    fun registerIdlingResource() {
+        IdlingRegistry.getInstance().register(EspressoIdlingResource.countingIdlingResource)
+        IdlingRegistry.getInstance().register(dataBindingIdlingResource)
+    }
+
+    /**
+     * Unregister your Idling Resource so it can be garbage collected and does not leak any memory.
+     */
+    @After
+    fun unregisterIdlingResource() {
+        IdlingRegistry.getInstance().unregister(EspressoIdlingResource.countingIdlingResource)
+        IdlingRegistry.getInstance().unregister(dataBindingIdlingResource)
+    }
+
+    private fun getReminder(): ReminderDTO {
+        return ReminderDTO(
+            "golden_gate_bridge title",
+            "golden_gate_bridge desc",
+            "golden_gate_bridge",
+            37.819927,
+            -122.478256)
+    }
+
+    @Test
+    fun createReminder_checkRemindersList() = runBlocking {
+        // Create a reminder.
+        val reminder = getReminder()
+        repository.saveReminder(reminder)
+
+        // Start a Reminder screen.
+        val scenario = ActivityScenario.launch(RemindersActivity::class.java)
+        dataBindingIdlingResource.monitorActivity(scenario)
+
+        // Check the List of added reminders.
+        Espresso.onView(ViewMatchers.withText(reminder.title)).check(ViewAssertions.matches(ViewMatchers.isDisplayed()))
+        Espresso.onView(ViewMatchers.withText(reminder.description)).check(ViewAssertions.matches(ViewMatchers.isDisplayed()))
+        Espresso.onView(ViewMatchers.withText(reminder.location)).check(ViewAssertions.matches(ViewMatchers.isDisplayed()))
+
+        // Delay
+        runBlocking {
+            delay(2000)
+        }
+    }
 
 }
