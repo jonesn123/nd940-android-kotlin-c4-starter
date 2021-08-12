@@ -121,9 +121,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback,
             _viewModel.longitude.value = it.latLng.longitude
             _viewModel.selectedPOI.value = it
             _viewModel.reminderSelectedLocationStr.value = it.name
+            _viewModel.navigationCommand.value = NavigationCommand.Back
         } ?: Toast.makeText(requireContext(), getString(R.string.select_poi), Toast.LENGTH_SHORT).show()
-
-        _viewModel.navigationCommand.value = NavigationCommand.Back
     }
 
 
@@ -341,7 +340,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback,
             }
 
             currentMarker?.remove()
-            currentPoi = null
             currentMarker = map.addMarker(
                 MarkerOptions()
                     .position(latLng)
