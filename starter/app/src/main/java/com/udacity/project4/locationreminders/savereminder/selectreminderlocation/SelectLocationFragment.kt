@@ -2,8 +2,10 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.location.Geocoder
 import android.location.Location
 import android.os.Build
@@ -30,6 +32,7 @@ import com.google.maps.GeocodingApiRequest
 import com.google.maps.PlacesApi
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
+import com.udacity.project4.base.NavigationCommand
 import com.udacity.project4.databinding.FragmentSelectLocationBinding
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
@@ -38,10 +41,13 @@ import java.io.IOException
 import java.util.*
 
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback,
+    GoogleMap.OnMyLocationButtonClickListener,
+    GoogleMap.OnMapLongClickListener,
     GoogleMap.OnPoiClickListener {
 
     private lateinit var map : GoogleMap
 
+    private val REQUEST_LOCATION_PERMISSION = 1
     //Use Koin to get the view model of the SaveReminder
     override val _viewModel: SaveReminderViewModel by inject()
     private lateinit var binding: FragmentSelectLocationBinding
@@ -49,7 +55,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback,
     lateinit var locationRequest: LocationRequest
     private var currentMarker: Marker? = null
     private var currentPoi: PointOfInterest? = null
-    private var fusedLocationClient: FusedLocationProviderClient? = null
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             val locationList = locationResult.locations
@@ -103,7 +109,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback,
 
     override fun onPause() {
         super.onPause()
-        fusedLocationClient?.removeLocationUpdates(locationCallback)
+        fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
     private fun onLocationSelected() {
@@ -115,8 +121,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback,
             _viewModel.longitude.value = it.latLng.longitude
             _viewModel.selectedPOI.value = it
             _viewModel.reminderSelectedLocationStr.value = it.name
-            findNavController().popBackStack()
         } ?: Toast.makeText(requireContext(), getString(R.string.select_poi), Toast.LENGTH_SHORT).show()
+
+        _viewModel.navigationCommand.value = NavigationCommand.Back
     }
 
 
@@ -154,6 +161,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback,
             isCompassEnabled = true
         }
         map.setOnPoiClickListener(this)
+        map.setOnMapLongClickListener(this)
+        setMapStyle(map)
         locationRequest = LocationRequest()
         locationRequest.interval = 120000 // two minute interval
         locationRequest.fastestInterval = 120000
@@ -166,15 +175,28 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback,
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
                 //Location Permission already granted
-                fusedLocationClient?.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper())
+                fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper())
                 map.isMyLocationEnabled = true
             } else {
                 //Request Location Permission
                 checkLocationPermission()
             }
         } else {
-            fusedLocationClient?.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper())
+            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper())
             map.isMyLocationEnabled = true
+        }
+    }
+
+    private fun setMapStyle(map: GoogleMap) {
+        try {
+            val success = map.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(requireActivity(), R.raw.map_style)
+            )
+            if (!success) {
+                Log.i(TAG, "Style parsing failed")
+            }
+        } catch (e: Resources.NotFoundException) {
+            Log.i(TAG, "Can't find style. Error: ", e)
         }
     }
 
@@ -238,7 +260,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback,
                         ) == PackageManager.PERMISSION_GRANTED
                     ) {
 
-                        fusedLocationClient?.requestLocationUpdates(
+                        fusedLocationClient.requestLocationUpdates(
                             locationRequest,
                             locationCallback,
                             Looper.myLooper()
@@ -278,4 +300,56 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback,
         }
     }
 
+    @SuppressLint("MissingPermission")
+    private fun enableMyLocation() {
+        if (isPermissionGranted()) {
+            fusedLocationClient.requestLocationUpdates(
+                LocationRequest(), locationCallback, Looper.myLooper()
+            )
+            map.isMyLocationEnabled = true
+        } else {
+            ActivityCompat.requestPermissions(
+                requireActivity(),
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                REQUEST_LOCATION_PERMISSION
+            )
+        }
+    }
+    private fun isPermissionGranted(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+    }
+    override fun onMyLocationButtonClick(): Boolean {
+        enableMyLocation()
+        return true
+    }
+
+    override fun onMapLongClick(latLng: LatLng?) {
+        latLng?.let {
+            val snippet = String.format(
+                Locale.getDefault(),
+                "Lat: %1$.5f, Long: %2$.5f",
+                latLng.latitude,
+                latLng.longitude
+            )
+            binding.saveBtn.setOnClickListener {
+                _viewModel.latitude.value = latLng.latitude
+                _viewModel.longitude.value = latLng.longitude
+                _viewModel.reminderSelectedLocationStr.value = getString(R.string.dropped_pin)
+                _viewModel.navigationCommand.value = NavigationCommand.Back
+            }
+
+            currentMarker?.remove()
+            currentPoi = null
+            currentMarker = map.addMarker(
+                MarkerOptions()
+                    .position(latLng)
+                    .title(getString(R.string.dropped_pin))
+                    .snippet(snippet)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+            )
+            currentMarker?.showInfoWindow()
+        }
+    }
 }

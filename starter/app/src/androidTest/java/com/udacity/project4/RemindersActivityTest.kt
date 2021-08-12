@@ -3,10 +3,11 @@ package com.udacity.project4
 import android.app.Application
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
-import androidx.test.espresso.Espresso
+import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
-import androidx.test.espresso.assertion.ViewAssertions
-import androidx.test.espresso.matcher.ViewMatchers
+import androidx.test.espresso.action.ViewActions.*
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.ViewMatchers.*
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.udacity.project4.locationreminders.RemindersActivity
@@ -17,9 +18,8 @@ import com.udacity.project4.locationreminders.data.local.RemindersLocalRepositor
 import com.udacity.project4.locationreminders.reminderslist.RemindersListViewModel
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.util.DataBindingIdlingResource
-import com.udacity.project4.util.EspressoIdlingResource
 import com.udacity.project4.util.monitorActivity
-import kotlinx.coroutines.delay
+import com.udacity.project4.utils.EspressoIdlingResource
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
@@ -107,7 +107,8 @@ class RemindersActivityTest :
             "golden_gate_bridge desc",
             "golden_gate_bridge",
             37.819927,
-            -122.478256)
+            -122.478256
+        )
     }
 
     @Test
@@ -121,14 +122,55 @@ class RemindersActivityTest :
         dataBindingIdlingResource.monitorActivity(scenario)
 
         // Check the List of added reminders.
-        Espresso.onView(ViewMatchers.withText(reminder.title)).check(ViewAssertions.matches(ViewMatchers.isDisplayed()))
-        Espresso.onView(ViewMatchers.withText(reminder.description)).check(ViewAssertions.matches(ViewMatchers.isDisplayed()))
-        Espresso.onView(ViewMatchers.withText(reminder.location)).check(ViewAssertions.matches(ViewMatchers.isDisplayed()))
+        onView(withText(reminder.title)).check(matches(isDisplayed()))
+        onView(withText(reminder.description)).check(matches(isDisplayed()))
+        onView(withText(reminder.location)).check(matches(isDisplayed()))
 
-        // Delay
-        runBlocking {
-            delay(2000)
-        }
+        scenario.close()
     }
 
+    @Test
+    fun createReminder_missingTitle() {
+        val scenario = ActivityScenario.launch(RemindersActivity::class.java)
+        dataBindingIdlingResource.monitorActivity(scenario)
+        val saveReminderViewModel: SaveReminderViewModel = get()
+
+        onView(withId(R.id.noDataTextView)).check(matches(isDisplayed()))
+
+        onView(withId(R.id.addReminderFAB)).perform(click())
+        onView(withId(R.id.reminderDescription)).perform(
+            typeText("Buy Cool drinks"),
+            closeSoftKeyboard()
+        )
+        saveReminderViewModel.reminderSelectedLocationStr.postValue("Giant Supermarket")
+        saveReminderViewModel.latitude.postValue(20.0)
+        saveReminderViewModel.longitude.postValue(20.0)
+
+        onView(withId(R.id.saveReminder)).perform(click())
+        onView(withId(com.google.android.material.R.id.snackbar_text))
+            .check(matches(withText("Please enter title")))
+
+        scenario.close()
+    }
+
+    @Test
+    fun createReminder_missingLocation() {
+        val scenario = ActivityScenario.launch(RemindersActivity::class.java)
+        dataBindingIdlingResource.monitorActivity(scenario)
+
+        onView(withId(R.id.noDataTextView)).check(matches(isDisplayed()))
+
+        onView(withId(R.id.addReminderFAB)).perform(click())
+        onView(withId(R.id.reminderTitle)).perform(typeText("Walking Around"), closeSoftKeyboard())
+        onView(withId(R.id.reminderDescription)).perform(
+            typeText("Buy Cool drinks"),
+            closeSoftKeyboard()
+        )
+
+        onView(withId(R.id.saveReminder)).perform(click())
+        onView(withId(com.google.android.material.R.id.snackbar_text))
+            .check(matches(withText("Please select location")))
+
+        scenario.close()
+    }
 }

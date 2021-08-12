@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.udacity.project4.locationreminders.MainCoroutineRule
 import com.udacity.project4.locationreminders.data.FakeDataSource
+import com.udacity.project4.locationreminders.data.FakeDataSource.Companion.ERROR_MESSAGE
 import com.udacity.project4.locationreminders.data.dto.ReminderDTO
 import com.udacity.project4.locationreminders.getOrAwaitValue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,7 +43,6 @@ class RemindersListViewModelTest {
         ReminderDTO("pier_39 title", "pier_39 desc", "pier_39", 37.808674, -122.409821)
 
     private val reminders = listOf(reminder1, reminder2, reminder3).sortedBy { it.id }
-
 
     @get:Rule
     var instantExecutorRule = InstantTaskExecutorRule()
@@ -107,5 +107,27 @@ class RemindersListViewModelTest {
 
         // Then assert that the progress indicator is hidden.
         assertThat(remindersListViewModel.showLoading.getOrAwaitValue(), `is`(false))
+    }
+
+    @Test
+    fun loadReminders_ReturnException() = mainCoroutineRule.runBlockingTest {
+        fakeDataSource.setReturnError(true)
+        remindersListViewModel.loadReminders()
+
+        assertThat(remindersListViewModel.showSnackBar.getOrAwaitValue(), `is`(ERROR_MESSAGE))
+        assertThat(remindersListViewModel.showNoData.getOrAwaitValue(), `is`(true))
+    }
+
+    @Test
+    fun invalidateShowNoData_EmptyRemindersList() {
+        remindersListViewModel.loadReminders()
+        assertThat(remindersListViewModel.showNoData.getOrAwaitValue(), `is`(false))
+    }
+
+    @Test
+    fun invalidateShowNoData_NonEmptyRemindersList() = mainCoroutineRule.runBlockingTest {
+        remindersListViewModel.loadReminders()
+
+        assertThat(remindersListViewModel.showNoData.getOrAwaitValue(), `is`(false))
     }
 }

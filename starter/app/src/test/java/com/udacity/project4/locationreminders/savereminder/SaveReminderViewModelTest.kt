@@ -4,6 +4,7 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.udacity.project4.R
+import com.udacity.project4.base.NavigationCommand
 import com.udacity.project4.locationreminders.MainCoroutineRule
 import com.udacity.project4.locationreminders.data.FakeDataSource
 import com.udacity.project4.locationreminders.getOrAwaitValue
@@ -66,8 +67,12 @@ class SaveReminderViewModelTest {
         )
 
         assertThat(
-            saveReminderViewModel.savedReminder.getOrAwaitValue(),
-            `is`<ReminderDataItem>(reminder)
+            saveReminderViewModel.showToast.getOrAwaitValue(),
+            `is`("Reminder Saved !")
+        )
+        assertThat(
+            saveReminderViewModel.navigationCommand.getOrAwaitValue(),
+            `is`<NavigationCommand>(NavigationCommand.Back)
         )
     }
 

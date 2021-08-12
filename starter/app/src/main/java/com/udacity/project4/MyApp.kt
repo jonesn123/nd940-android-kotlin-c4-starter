@@ -1,8 +1,6 @@
 package com.udacity.project4
 
-import android.app.Application
 import androidx.multidex.MultiDexApplication
-import com.google.android.libraries.places.api.Places
 import com.udacity.project4.locationreminders.data.ReminderDataSource
 import com.udacity.project4.locationreminders.data.local.LocalDB
 import com.udacity.project4.locationreminders.data.local.RemindersLocalRepository
@@ -30,13 +28,7 @@ class MyApp : MultiDexApplication() {
                 )
             }
             //Declare singleton definitions to be later injected using by inject()
-            single {
-                //This view model is declared singleton to be used across multiple fragments
-                SaveReminderViewModel(
-                    get(),
-                    get() as ReminderDataSource
-                )
-            }
+            viewModel { SaveReminderViewModel(get(), get() as ReminderDataSource) }
             single { RemindersLocalRepository(get()) as ReminderDataSource }
             single { LocalDB.createRemindersDao(this@MyApp) }
         }
