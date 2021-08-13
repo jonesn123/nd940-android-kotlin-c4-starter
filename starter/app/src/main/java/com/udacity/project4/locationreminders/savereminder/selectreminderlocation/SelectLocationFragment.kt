@@ -206,8 +206,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback,
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(
-                    requireActivity(),
+            if (shouldShowRequestPermissionRationale(
                     Manifest.permission.ACCESS_FINE_LOCATION
                 )
             ) {
@@ -221,8 +220,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback,
                         "OK"
                     ) { _, _ ->
                         //Prompt the user once explanation has been shown
-                        ActivityCompat.requestPermissions(
-                            requireActivity(),
+                        requestPermissions(
                             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                             MY_PERMISSIONS_REQUEST_LOCATION
                         )
@@ -233,8 +231,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback,
 
             } else {
                 // No explanation needed, we can request the permission.
-                ActivityCompat.requestPermissions(
-                    requireActivity(),
+                requestPermissions(
                     arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                     MY_PERMISSIONS_REQUEST_LOCATION
                 )
@@ -307,8 +304,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback,
             )
             map.isMyLocationEnabled = true
         } else {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
+            requestPermissions(
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                 REQUEST_LOCATION_PERMISSION
             )

@@ -72,9 +72,6 @@ class SaveReminderFragment : BaseFragment() {
                 NavigationCommand.To(SaveReminderFragmentDirections.actionSaveReminderFragmentToSelectLocationFragment())
         }
 
-        requestForegroundAndBackgroundLocationPermissions()
-        checkDeviceLocationSettingsAndStartGeofence()
-
         binding.saveReminder.setOnClickListener {
             val title = _viewModel.reminderTitle.value
             val description = _viewModel.reminderDescription.value
@@ -95,6 +92,7 @@ class SaveReminderFragment : BaseFragment() {
             if (foregroundAndBackgroundPermissionApproved()) {
                 Log.i(TAG, "Before adding the geofence and saving reminder")
                 if (_viewModel.validateEnteredData(reminderDataItem)) {
+                    checkDeviceLocationSettingsAndStartGeofence()
                     addGeofence(reminderDataItem)
                 }
             } else {
@@ -116,11 +114,7 @@ class SaveReminderFragment : BaseFragment() {
             else -> REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
         }
 
-        ActivityCompat.requestPermissions(
-            requireActivity(),
-            permissionsArray,
-            resultCode
-        )
+        requestPermissions(permissionsArray, resultCode)
     }
 
     override fun onRequestPermissionsResult(
@@ -192,30 +186,22 @@ class SaveReminderFragment : BaseFragment() {
             .addGeofence(geofence)
             .build()
 
-        val intent = Intent(requireActivity(), GeofenceBroadcastReceiver::class.java)
-        val geofencePendingIntent = PendingIntent.getBroadcast(
-            requireActivity(),
-            0, intent, PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        geofenceClient.removeGeofences(geofencePendingIntent).addOnCompleteListener {
-            geofenceClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
-                addOnSuccessListener {
-                    Log.i(TAG, "Geofence onSuccess")
-                    // 2) save the reminder to the local db
-                    _viewModel.validateAndSaveReminder(newReminder)
+        geofenceClient.addGeofences(geofencingRequest, geofencePendingIntent)?.run {
+            addOnSuccessListener {
+                Log.i(TAG, "Geofence onSuccess")
+                // 2) save the reminder to the local db
+                _viewModel.validateAndSaveReminder(newReminder)
+            }
+            addOnFailureListener {
+                if (isAdded) {
+                    Toast.makeText(
+                        requireActivity(),
+                        R.string.geofences_not_added,
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
-                addOnFailureListener {
-                    if (isAdded) {
-                        Toast.makeText(
-                            requireActivity(),
-                            R.string.geofences_not_added,
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                    if ((it.message != null)) {
-                        Log.i(TAG, it.message!!)
-                    }
+                if ((it.message != null)) {
+                    Log.i(TAG, it.message!!)
                 }
             }
         }
@@ -239,9 +225,10 @@ class SaveReminderFragment : BaseFragment() {
         locationSettingsResponseTask?.addOnFailureListener { exception ->
             if (exception is ResolvableApiException && resolve) {
                 try {
-                    exception.startResolutionForResult(
-                        requireActivity(),
-                        REQUEST_TURN_DEVICE_LOCATION_ON
+                    startIntentSenderForResult(
+                        exception.resolution.intentSender,
+                        REQUEST_TURN_DEVICE_LOCATION_ON,
+                        null,0,0,0,null
                     )
                 } catch (sendEx: IntentSender.SendIntentException) {
                     Log.d(TAG, "Error getting location settings resolution: " + sendEx.message)
